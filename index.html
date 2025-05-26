@@ -26,8 +26,8 @@
                 <div class="contact" data-contact-id="bot_room">
                     <img src="img_2.png" alt="User">
                     <div class="contact-info">
-                        <span class="name">Ценители сладостей</span>
-                        <span class="role">Секта</span>
+                        <span class="name">Лунатик 🌙</span>
+                        <span class="role">Не будить!</span>
                     </div>
                     <div class="status offline"></div>
                 </div>
@@ -91,7 +91,7 @@
     document.addEventListener("DOMContentLoaded", () => {
     let ws;
     let currentRoom = "avant";
-    const BOT_NAME = "Магический Бот"; // 🤖 Имя бота
+    const BOT_NAME = "Лунатик 💤"; // 🤖 Имя бота
     const BOT_ROOM = "bot_room";
     let currentUsername = ""; // 👤 Имя пользователя
     let editingMessageId = null;
@@ -207,7 +207,7 @@
         const greetingMessage = {
             id: "bot_greeting",
             sender: BOT_NAME,
-            text: `Привет! Я ${BOT_NAME}. Могу рассказать шутки, факты, погадать или сыграть в Камень-Ножницы-Бумагу. Спроси меня о "погоде", попроси "шутку" или "факт", или просто скажи "как дела". Давай общаться! 😊`,
+            text: `Привет, я ${BOT_NAME}. Могу рассказать шутки, факты, отправить арт, погадать или сыграть в кнб. Спроси меня о погоде, попроси анекдот или факт, просто скажи: "Как дела?". Давай общаться.`,
             time: "—:—"
         };
         const messageElement = document.createElement("div");
@@ -259,7 +259,7 @@
                 ${isSent && msg.sender !== BOT_NAME ? `
                     <div class="message-actions">
                         <button class="edit-btn">✏️</button>
-                        <button class="delete-btn">🗑</button>
+                        <button class="delete-btn">🗑️</button>
                     </div>
                 ` : ''}
             </div>
@@ -370,8 +370,6 @@
             "Изучаю мир через наши беседы."
         ],
         "шутка": [
-            "Почему программист всегда мокрый? Потому что он постоянно в багах! 🐛💦",
-            "Как называется обезьяна-ботаник? Горилла-учёный! 🦍📚",
             "Почему бот не спит? Потому что у него нет режима сна... только режим ожидания! ⏳😴",
             "Что сказал один HTML-документ другому? — «Тег-тесь!» 👋",
             "Почему математики плохо танцуют? У них нет алгоритма движений! 1, 2, 3... 💃❌"
@@ -415,12 +413,14 @@
         "Что нового?",
         "Любопытно...",
         "Ага, понятно.",
-        "Ты меня заинтриговал(а).",
+        "Ты меня заинтриговал.",
         "И что дальше?",
         "Вселенная говорит с тобой через случайности... или это я? 🌌🔮",
         "Если бы у слов были крылья, мы бы все летали. 🕊️✨",
-        "Ты когда-нибудь задумывался(ась), что боты тоже мечтают?.. 🤖💤",
-        "42. Вот и ответ. 😉"
+        "Ты когда-нибудь задумывался, что боты тоже мечтают?.. 🤖💤",
+        "Прости, я уснул.",
+        "Вот и отлично.",
+        "Хочу тёплых объятий..."
     ];
 
     function gameResponse(userChoice) {
@@ -434,7 +434,7 @@
             (userChoice === "ножницы" && botChoice === "бумага") ||
             (userChoice === "бумага" && botChoice === "камень")
         ) {
-            result = "Ты победил(а)! 🎉";
+            result = "Ты победил! 🎉";
         } else {
             result = "Я победил! 😎";
         }
@@ -443,7 +443,7 @@
             "ножницы": "✌️",
             "бумага": "✋"
         };
-        return `Ты выбрал(а) ${userChoice}${emojis[userChoice]}, я выбрал ${botChoice}${emojis[botChoice]}. ${result}`;
+        return `Ты выбрал ${userChoice}${emojis[userChoice]}, я выбрал ${botChoice}${emojis[botChoice]}. ${result}`;
     }
 
     function botRespond(messageText) {
@@ -486,7 +486,6 @@
                     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     edited: false
                 };
-                addMessage(botMessage, false);
             }
             }, 100);
         }
