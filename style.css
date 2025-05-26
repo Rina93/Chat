@@ -1,0 +1,403 @@
+:root {
+    --primary-dark: #0f172a;
+    --secondary-dark: #1e293b;
+    --accent-blue: #3b82f6;
+    --accent-light: #60a5fa;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+}
+
+/* Базовые стили */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--primary-dark);
+    color: var(--text-primary);
+}
+
+/* Основной контейнер чата */
+.chat-app {
+    display: grid;
+    height: 100vh;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    grid-template-columns: 350px 1fr 320px;
+}
+
+/* Панель контактов */
+.contacts-panel {
+    width: 350px;
+    background-color: var(--secondary-dark);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+}
+
+.header {
+    padding: 10px 15px;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    color: var(--accent-light);
+}
+
+.divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 10px 0;
+}
+
+/* Контакт в списке */
+.contact {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    margin: 5px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.contact:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.contact.active {
+    background-color: var(--accent-blue);
+}
+
+.contact img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    margin-right: 15px;
+    object-fit: cover;
+}
+
+.contact-info {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.contact .name {
+    font-weight: 600;
+    display: block;
+}
+
+.contact .role {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: block;
+}
+
+/* Область чата */
+.chat-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Чтобы overflow заработал внутри flex */
+}
+
+.chat-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Сообщения */
+.messages {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: rgba(15, 23, 42, 0.8);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.message {
+    display: flex;
+    margin-bottom: 15px;
+    max-width: 70%;
+    align-items: start;
+}
+
+.message.received {
+    align-self: flex-start;
+}
+
+.message.sent {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message-content {
+    position: relative;
+    padding: 12px 16px;
+    border-radius: 18px;
+    background-color: var(--accent-blue);
+    word-break: break-word;
+    display: flex;
+    flex-direction: column;
+}
+
+.message.received .message-content {
+    background-color: var(--secondary-dark);
+}
+
+.message-text {
+    line-height: 1.4;
+}
+
+/* Стили для времени и метки */
+.message-time-container {
+    display: flex;
+    align-items: center;
+}
+
+.message-time {
+    font-size: 0.75em;
+    margin-top: 4px;
+}
+
+.message.received .message-time {
+    text-align: left;
+}
+
+.sent .message-time-container {
+    justify-content: flex-end; /* Выравнивание времени и метки по правому краю */
+}
+
+.sent .message-time,
+.sent .edited-badge {
+    margin-right: 4px; /* Отступ справа для отправленных сообщений */
+}
+
+.message-actions {
+    display: none;
+    position: absolute;
+    right: 10px;
+    top: 85%;
+    transform: translateY(-50%);
+    background: var(--secondary-dark);
+    border-radius: 15px;
+    padding: 5px;
+}
+
+.message:hover .message-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-btn,
+.delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+}
+
+.edit-btn:hover,
+.delete-btn:hover {
+    color: var(--accent-light);
+}
+
+/* Поле ввода сообщения */
+.input-container {
+    position: sticky;
+    bottom: 0; /* Фиксируем внизу */
+    z-index: 1; /* Чтобы была поверх всего */
+    background-color: var(--secondary-dark);
+    padding: 15px;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1); /* Тень сверху */
+}
+
+.input-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#message-input {
+    flex-grow: 1;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background-color: var(--secondary-dark);
+    color: var(--text-primary);
+    font-size: 1rem;
+    height: 48px;
+    box-sizing: border-box;
+}
+
+#send-button {
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 0 20px;
+    height: 50px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    min-width: 120px;
+}
+
+#send-button:hover {
+    background-color: #2563eb;
+}
+
+#send-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.bottom-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 8px;
+}
+
+.panel-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.panel-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.panel-btn:hover {
+    opacity: 1;
+    color: var(--accent-light);
+}
+
+.panel-btn svg {
+    display: block;
+}
+
+.panel-status {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+/* Правая панель новостей */
+.news-panel {
+    width: 320px;
+    background-color: var(--secondary-dark);
+    border-left: 1px solid var(--border-color);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.news-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+.news-header h3 {
+    margin: 0;
+    color: var(--accent-light);
+}
+
+.news-content {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.news-item {
+    padding: 8px 0;
+    padding-right: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ad-place {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    text-align: center;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.system-msg {
+    color: #888;
+    text-align: center;
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+.edited-badge {
+    font-size: 0.75em;
+    color: #888;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* Стили для имени и аватарки у полученных сообщений */
+.sender-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 6px;
+    margin-right: 14px;
+}
+
+.avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%; /* Круглая форма */
+    object-fit: cover; /* Обрезает изображение, сохраняя пропорции */
+}
+
+.sender-name {
+    font-size: 1.0rem;
+    text-align: center;
+    margin-bottom: 4px; /* Небольшое расстояние между именем и аватаркой */
+}
+
+/* Стилизация скроллбара */
+.messages::-webkit-scrollbar {
+    width: 12px; /* Толщина скроллбара */
+}
+
+.messages::-webkit-scrollbar-track {
+    background-color: rgba(255, 255, 255, 0.05); /* Цвет фона полосы прокрутки */
+    border-radius: 10px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+    background-color: var(--accent-blue); /* Цвет самой "ручки" скролла */
+    border-radius: 10px; /* Закругление краёв */
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+    background-color: #2563eb; /* Цвет при наведении */
+}
