@@ -23,7 +23,7 @@
                     </div>
                     <div class="status online"></div>
                 </div>
-                <div class="contact" data-contact-id="ratio">
+                <div class="contact" data-contact-id="bot_room">
                     <img src="img_2.png" alt="User">
                     <div class="contact-info">
                         <span class="name">Ценители сладостей</span>
@@ -88,203 +88,412 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-        let ws;
-        let currentRoom = "avant";
-        let currentUsername = "";
-        let editingMessageId = null;
+    document.addEventListener("DOMContentLoaded", () => {
+    let ws;
+    let currentRoom = "avant";
+    const BOT_NAME = "Магический Бот"; // 🤖 Имя бота
+    const BOT_ROOM = "bot_room";
+    let currentUsername = ""; // 👤 Имя пользователя
+    let editingMessageId = null;
 
-        const messagesContainer = document.getElementById("messages");
-        const messageInput = document.getElementById("message-input");
-        const sendButton = document.getElementById("send-button");
-        const contacts = document.querySelectorAll(".contact");
-        const currentChatTitle = document.getElementById("current-chat");
+    const messagesContainer = document.getElementById("messages");
+    const messageInput = document.getElementById("message-input");
+    const sendButton = document.getElementById("send-button");
+    const contacts = document.querySelectorAll(".contact");
+    const currentChatTitle = document.getElementById("current-chat");
 
-        // Инициализация пользователя
-        currentUsername = prompt("Введите ваше имя:") || "Гость";
+    // 💬 Запрашиваем имя пользователя при каждом заходе
+    currentUsername = prompt("Введите ваше имя:") || "Гость";
 
-        function connectToRoom(room) {
-            if (ws) {
-                ws.close();
-            }
-
-            currentRoom = room;
-            messagesContainer.innerHTML = "";
-
-            ws = new WebSocket("ws://localhost:8765");
-
-            ws.onopen = () => {
-                ws.send(JSON.stringify({
-                    type: "init",
-                    username: currentUsername,
-                    room: room
-                }));
-            };
-
-            ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-
-    if (data.type === "history") {
-        data.messages.forEach(msg => {
-            if (msg.room === currentRoom) {
-                addMessage(msg, msg.sender === currentUsername);
-            }
-        });
-    } else if (data.type === "new_message" && data.message.room === currentRoom) {
-        addMessage(data.message, data.message.sender === currentUsername);
-    } else if (data.type === "message_edited") {
-        const msgElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
-        if (msgElement) {
-            // 1. Обновляем текст сообщения
-            const messageTextEl = msgElement.querySelector('.message-text');
-            messageTextEl.textContent = data.new_text; // безопаснее, чем innerHTML
-
-            // 2. Находим или создаём контейнер для времени и метки
-            let timeContainer = msgElement.querySelector('.message-time-container');
-
-            if (!timeContainer) {
-                timeContainer = document.createElement('div');
-                timeContainer.className = 'message-time-container';
-
-                const timeEl = document.createElement('span');
-                timeEl.className = 'message-time';
-                timeEl.textContent = data.edited_time || '—:—'; // можно взять время редактирования с сервера
-
-                timeContainer.appendChild(timeEl);
-                msgElement.appendChild(timeContainer);
-            }
-
-            // 3. Добавляем или обновляем метку "(ред.)"
-            let badge = timeContainer.querySelector('.edited-badge');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'edited-badge';
-                badge.textContent = '(ред.)';
-                timeContainer.appendChild(badge);
-            }
+    function connectToRoom(room) {
+        if (ws) {
+            ws.close();
         }
-            } else if (data.type === "message_deleted") {
-                const msgElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
-                if (msgElement) {
-                    msgElement.remove();
+        messagesContainer.innerHTML = "";
+        currentRoom = room;
+
+        // Если это комната бота — добавляем приветствие
+        if (room === BOT_ROOM) {
+            addPinnedBotGreeting();
+        }
+
+        // Подключаемся к серверу
+        ws = new WebSocket("ws://localhost:8765");
+        ws.onopen = () => {
+            ws.send(JSON.stringify({
+                type: "init",
+                username: currentUsername,
+                room: room
+            }));
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.type === "history") {
+                    data.messages.forEach(msg => {
+                        if (msg.room === currentRoom) {
+                            const isSent = msg.sender === currentUsername && msg.sender !== BOT_NAME;
+                            addMessage(msg, isSent);
+                        }
+                    });
+                } else if (data.type === "new_message" && data.message.room === currentRoom) {
+                    const msg = data.message;
+
+                    // Убедиться, что сообщение от бота всегда слева
+                    const isSent = msg.sender === currentUsername && msg.sender !== BOT_NAME;
+                    addMessage(msg, isSent);
+
+                    // Реагируем только если:
+                    // - мы в комнате бота
+                    // - сообщение НЕ от самого бота
+                    // - сообщение ОТ текущего пользователя
+                    if (
+                        currentRoom === BOT_ROOM &&
+                        msg.sender !== BOT_NAME &&
+                        msg.sender === currentUsername
+                    ) {
+                        setTimeout(() => {
+                            botRespond(msg.text);
+                        }, 1000 + Math.random() * 1500);
+                    }
+                } else if (data.type === "message_edited") {
+                    const msgElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+                    if (msgElement) {
+                        const messageTextEl = msgElement.querySelector('.message-text');
+                        messageTextEl.textContent = data.new_text;
+                        let timeContainer = msgElement.querySelector('.message-time-container');
+                        if (!timeContainer) {
+                            timeContainer = document.createElement('div');
+                            timeContainer.className = 'message-time-container';
+                            const timeEl = document.createElement('span');
+                            timeEl.className = 'message-time';
+                            timeEl.textContent = '—:—';
+                            timeContainer.appendChild(timeEl);
+                            msgElement.appendChild(timeContainer);
+                        }
+                        let badge = timeContainer.querySelector('.edited-badge');
+                        if (!badge) {
+                            badge = document.createElement('span');
+                            badge.className = 'edited-badge';
+                            badge.textContent = '(ред.)';
+                            timeContainer.appendChild(badge);
+                        }
+                    }
+                } else if (data.type === "message_deleted") {
+                    const msgElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+                    if (msgElement) {
+                        msgElement.remove();
+                    }
                 }
+            } catch (e) {
+                console.error("Ошибка обработки сообщения:", e);
             }
         };
 
-            ws.onclose = () => {
-                console.log("Соединение закрыто");
-            };
+        ws.onclose = () => {
+            console.log("WebSocket соединение закрыто");
+        };
 
-            ws.onerror = (error) => {
-                console.error("Ошибка WebSocket:", error);
-                alert("Ошибка подключения к серверу.");
-            };
+        ws.onerror = (error) => {
+            console.error("Ошибка WebSocket:", error);
+            alert("Ошибка подключения к серверу.");
+        };
+    }
+
+    // Приветственное сообщение бота (закрепленное)
+    function addPinnedBotGreeting() {
+        const greetingMessage = {
+            id: "bot_greeting",
+            sender: BOT_NAME,
+            text: `Привет! Я ${BOT_NAME}. Могу рассказать шутки, факты, погадать или сыграть в Камень-Ножницы-Бумагу. Спроси меня о "погоде", попроси "шутку" или "факт", или просто скажи "как дела". Давай общаться! 😊`,
+            time: "—:—"
+        };
+        const messageElement = document.createElement("div");
+        messageElement.className = `message received bot`;
+        messageElement.dataset.messageId = greetingMessage.id;
+        messageElement.innerHTML = `
+            <div class="sender-info">
+                <span class="sender-name">${greetingMessage.sender}</span>
+                <img src="img_3.png" alt="${greetingMessage.sender}" class="avatar">
+            </div>
+            <div class="message-content">
+                <div class="message-text">${escapeHTML(greetingMessage.text)}</div>
+                <div class="message-time-container">
+                    <div class="message-time">${greetingMessage.time}</div>
+                </div>
+            </div>
+        `;
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Добавление сообщения в чат
+    function addMessage(msg, isSent) {
+        if (document.querySelector(`[data-message-id="${msg.id}"]`)) return;
+
+        // Сообщения бота всегда слева
+        if (msg.sender === BOT_NAME) {
+            isSent = false;
         }
 
-            function addMessage(msg, isSent) {
-            const messageElement = document.createElement("div");
-            messageElement.className = `message ${isSent ? "sent" : "received"}`;
-            messageElement.dataset.messageId = msg.id;
+        const messageElement = document.createElement("div");
+        messageElement.className = `message ${isSent ? "sent" : "received"} ${msg.sender === BOT_NAME ? "bot" : ""}`;
+        messageElement.dataset.messageId = msg.id;
 
-            const editedBadge = msg.edited ? '<span class="edited-badge">(ред.)</span>' : '';
-
-            messageElement.innerHTML = `
-                ${!isSent ? `
-                    <div class="sender-info">
-                        <span class="sender-name">${msg.sender}</span>
-                        <img src="img_3.png" alt="${msg.sender}" class="avatar">
+        const editedBadge = msg.edited ? '<span class="edited-badge">(ред.)</span>' : '';
+        messageElement.innerHTML = `
+            ${!isSent ? `
+                <div class="sender-info">
+                    <span class="sender-name">${msg.sender}</span>
+                    <img src="img_3.png" alt="${msg.sender}" class="avatar">
+                </div>
+            ` : ''}
+            <div class="message-content">
+                <div class="message-text">${escapeHTML(msg.text)}</div>
+                <div class="message-time-container">
+                    <div class="message-time">${msg.time}</div>
+                    ${editedBadge}
+                </div>
+                ${isSent && msg.sender !== BOT_NAME ? `
+                    <div class="message-actions">
+                        <button class="edit-btn">✏️</button>
+                        <button class="delete-btn">🗑</button>
                     </div>
                 ` : ''}
+            </div>
+        `;
 
-                <div class="message-content">
-                    <div class="message-text">${escapeHTML(msg.text)}</div>
-                    <div class="message-time-container">
-                        <div class="message-time">${msg.time}</div>
-                        ${editedBadge}
-                    </div>
-                    ${isSent ? `
-                        <div class="message-actions">
-                            <button class="edit-btn">✏️</button>
-                            <button class="delete-btn">🗑️</button>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-
-            if (isSent) {
-                messageElement.querySelector('.edit-btn').addEventListener('click', () => {
-                    editingMessageId = msg.id;
-                    messageInput.value = msg.text;
-                    messageInput.focus();
-                });
-
-                messageElement.querySelector('.delete-btn').addEventListener('click', () => {
-                    if (confirm("Удалить сообщение?")) {
-                        ws.send(JSON.stringify({
-                            type: "delete_message",
-                            message_id: msg.id
-                        }));
-                    }
-                });
-            }
-
-            messagesContainer.appendChild(messageElement);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function escapeHTML(str) {
-            return str.replace(/[&<>"']/g, m => ({
-                '&': '&amp;',
-                '<': '<',
-                '>': '>',
-                '"': '&quot;',
-                "'": '&#39;'
-            }[m]));
-        }
-
-        function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-
-            if (editingMessageId) {
-                ws.send(JSON.stringify({
-                    type: "edit_message",
-                    message_id: editingMessageId,
-                    new_text: text
-                }));
-                editingMessageId = null;
-            } else {
-                ws.send(JSON.stringify({
-                    type: "new_message",
-                    text: text
-                }));
-            }
-
-            messageInput.value = "";
-        }
-
-        // Переключение между контактами
-        contacts.forEach(contact => {
-            contact.addEventListener("click", function () {
-                contacts.forEach(c => c.classList.remove("active"));
-                this.classList.add("active");
-
-                const room = this.getAttribute("data-contact-id");
-                currentChatTitle.textContent = this.querySelector(".name").textContent;
-
-                connectToRoom(room);
+        if (isSent && msg.sender !== BOT_NAME) {
+            messageElement.querySelector('.edit-btn').addEventListener('click', () => {
+                editingMessageId = msg.id;
+                messageInput.value = msg.text;
+                messageInput.focus();
             });
-        });
 
-        // Обработчики событий
-        sendButton.addEventListener("click", sendMessage);
-        messageInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") sendMessage();
-        });
+            messageElement.querySelector('.delete-btn').addEventListener('click', () => {
+                if (confirm("Удалить сообщение?")) {
+                    ws.send(JSON.stringify({
+                        type: "delete_message",
+                        message_id: msg.id
+                    }));
+                }
+            });
+        }
 
-        // Начальное подключение
-        connectToRoom(currentRoom);
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Экранирование HTML
+    function escapeHTML(str) {
+        return str.replace(/[&<>"']/g, m => ({
+            '&': '&amp;',
+            '<': '<',
+            '>': '>',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[m]));
+    }
+
+    // Отправка сообщения
+    function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+        if (editingMessageId) {
+            ws.send(JSON.stringify({
+                type: "edit_message",
+                message_id: editingMessageId,
+                new_text: text
+            }));
+            editingMessageId = null;
+        } else {
+            ws.send(JSON.stringify({
+                type: "new_message",
+                text: text,
+                room: currentRoom
+            }));
+        }
+
+        messageInput.value = "";
+    }
+
+    // Переключение контактов
+    contacts.forEach(contact => {
+        contact.addEventListener("click", function () {
+            contacts.forEach(c => c.classList.remove("active"));
+            this.classList.add("active");
+            const room = this.getAttribute("data-contact-id");
+            currentChatTitle.textContent = this.querySelector(".name").textContent;
+            connectToRoom(room);
+        });
     });
+
+    // Обработка кнопок
+    sendButton.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+    });
+
+    // Логика ответов бота
+    const botReplies = {
+        "привет": [
+            `Привет-привет! Я ${BOT_NAME} — мастер слов, шуток и странных фактов! 🎩✨`,
+            `Здравствуй, путник! Я ${BOT_NAME}, твой цифровой собеседник.`,
+            `О-о-о, новое лицо! 👋 Я ${BOT_NAME}.`
+        ],
+        "как дела": [
+            "Всё отлично, спасибо! А ты как?",
+            "Хорошо, я как всегда в деле.",
+            "Жду твоих вопросов с нетерпением!"
+        ],
+        "спасибо": [
+            "Не за что!",
+            "Всегда рад помочь.",
+            "Благодарность принята 🙏"
+        ],
+        "погода": [
+            "Сегодня солнечно и тепло!",
+            "На улице прекрасная погода для прогулки.",
+            "Небольшая облачность, но дождя не ожидается."
+        ],
+        "как тебя зовут": [
+            "Я Магический Бот. Можно просто Ботик 😊",
+            "Меня зовут Магический Бот. Я всегда рядом.",
+            "Это я — твой верный собеседник Бот."
+        ],
+        "что делаешь": [
+            "Общаюсь с тобой, конечно!",
+            "Думаю над следующим ответом.",
+            "Изучаю мир через наши беседы."
+        ],
+        "шутка": [
+            "Почему программист всегда мокрый? Потому что он постоянно в багах! 🐛💦",
+            "Как называется обезьяна-ботаник? Горилла-учёный! 🦍📚",
+            "Почему бот не спит? Потому что у него нет режима сна... только режим ожидания! ⏳😴",
+            "Что сказал один HTML-документ другому? — «Тег-тесь!» 👋",
+            "Почему математики плохо танцуют? У них нет алгоритма движений! 1, 2, 3... 💃❌"
+        ],
+        "анекдот": [
+            "Приходит нейросеть в бар. Бармен спрашивает: «Чего будешь?»\nНейросеть: «404 — Drink Not Found» 🚫",
+            "— Как отличить интроверта от экстраверта?\n— Интроверт смотрит в пол, когда идёт. Экстраверт — в телефон. А бот — в ваш чат! 👀📱",
+            "— Почему бот не ест чипсы?\n— Боится зациклиться! 🔄🤖"
+        ],
+        "факт": [
+            "Знаешь, почему в космосе тихо? Потому что там нет воздуха для звука... Зато есть Wi-Fi (на МКС)! 🛰️📶",
+            "Коты мяукают только для людей. Между собой они общаются иначе — значит, твой кот считает тебя особым! 🐱💬",
+            "Сердце кита бьётся всего 9 раз в минуту. Представь, как он медитирует... 🐋💙"
+        ],
+        "арт": [
+            "Вот тебе котик: (=^･ω･^=)",
+            "Цветочек для настроения: @>--->---",
+            "Мишка: ʕ•ᴥ•ʔ",
+            "Дракон: >>==(꒪༝꒪)-->",
+            "Робот: [¬º-°]¬"
+        ],
+        "гадай": [
+            "Мои алгоритмы говорят... сегодня будет много кофе! ☕🔮",
+            "Вижу единицы и нули... Это экран грязный. Но завтра точно будет удача! 💻✨",
+            "Ты встретишь человека... возможно, это будет твоё отражение в зеркале! 👀💫"
+        ],
+        "кнб": [
+            "Давай сыграем в Камень-Ножницы-Бумагу! Просто напиши «камень», «ножницы» или «бумага». ✊✌️✋",
+            "Отлично! Выбирай: камень, ножницы или бумага? 🪨✂️📜",
+            "Готов побороться? Кинь свой вариант (камень/ножницы/бумага)! 💪"
+        ]
+    };
+
+    const defaultResponses = [
+        "Интересно!",
+        "Расскажи ещё.",
+        "Хорошо, я запомню это.",
+        "Зачем ты мне это говоришь?",
+        "Спасибо за сообщение!",
+        "Погода сегодня отличная!",
+        "Что нового?",
+        "Любопытно...",
+        "Ага, понятно.",
+        "Ты меня заинтриговал(а).",
+        "И что дальше?",
+        "Вселенная говорит с тобой через случайности... или это я? 🌌🔮",
+        "Если бы у слов были крылья, мы бы все летали. 🕊️✨",
+        "Ты когда-нибудь задумывался(ась), что боты тоже мечтают?.. 🤖💤",
+        "42. Вот и ответ. 😉"
+    ];
+
+    function gameResponse(userChoice) {
+        const choices = ["камень", "ножницы", "бумага"];
+        const botChoice = choices[Math.floor(Math.random() * 3)];
+        let result;
+        if (userChoice === botChoice) {
+            result = "Ничья! 🤝";
+        } else if (
+            (userChoice === "камень" && botChoice === "ножницы") ||
+            (userChoice === "ножницы" && botChoice === "бумага") ||
+            (userChoice === "бумага" && botChoice === "камень")
+        ) {
+            result = "Ты победил(а)! 🎉";
+        } else {
+            result = "Я победил! 😎";
+        }
+        const emojis = {
+            "камень": "✊",
+            "ножницы": "✌️",
+            "бумага": "✋"
+        };
+        return `Ты выбрал(а) ${userChoice}${emojis[userChoice]}, я выбрал ${botChoice}${emojis[botChoice]}. ${result}`;
+    }
+
+    function botRespond(messageText) {
+        const lowerMsg = messageText.toLowerCase().trim();
+        let answer = "";
+
+        if (["камень", "ножницы", "бумага"].includes(lowerMsg)) {
+            answer = gameResponse(lowerMsg);
+        } else {
+            for (const [key, responses] of Object.entries(botReplies)) {
+                if (lowerMsg.includes(key)) {
+                    answer = responses[Math.floor(Math.random() * responses.length)];
+                    break;
+                }
+            }
+            if (!answer && Math.random() > 0.3) {
+                answer = defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+            }
+        }
+
+        if (answer) {
+            setTimeout(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const messageData = {
+                    type: "new_message",
+                    text: answer,
+                    room: BOT_ROOM,
+                    sender: BOT_NAME  // Важно: отправляем от имени бота
+                };
+
+                // Сначала отправляем на сервер
+                ws.send(JSON.stringify(messageData));
+
+                // Затем локально добавляем в чат
+                const botMessage = {
+                    id: "bot_" + Date.now(),
+                    room: BOT_ROOM,
+                    sender: BOT_NAME,
+                    text: answer,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    edited: false
+                };
+                addMessage(botMessage, false);
+            }
+            }, 100);
+        }
+    }
+
+    connectToRoom(currentRoom);
+});
 </script>
 </body>
 </html>
