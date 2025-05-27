@@ -147,7 +147,7 @@
 
                 const timeEl = document.createElement('span');
                 timeEl.className = 'message-time';
-                timeEl.textContent = data.edited_time || '—:—'; // время редактирования с сервера
+                timeEl.textContent = data.edited_time || '—:—'; // можно взять время редактирования с сервера
 
                 timeContainer.appendChild(timeEl);
                 msgElement.appendChild(timeContainer);

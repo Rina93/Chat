@@ -9,8 +9,8 @@ from datetime import datetime
 def get_db():
     return pymysql.connect(
         host='localhost',
-        user='root',
-        password='1234',
+        user='root',  # заменить на свой логин
+        password='1234',  # заменить на свой пароль
         database='chat_db',
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor

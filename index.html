@@ -93,7 +93,7 @@
     let currentRoom = "avant";
     const BOT_NAME = "Лунатик 💤"; // 🤖 Имя бота
     const BOT_ROOM = "bot_room";
-    let currentUsername = ""; // 👤 Имя пользователя
+    let currentUsername = ""; // Имя пользователя
     let editingMessageId = null;
 
     const messagesContainer = document.getElementById("messages");
@@ -145,10 +145,6 @@
                     const isSent = msg.sender === currentUsername && msg.sender !== BOT_NAME;
                     addMessage(msg, isSent);
 
-                    // Реагируем только если:
-                    // - мы в комнате бота
-                    // - сообщение НЕ от самого бота
-                    // - сообщение ОТ текущего пользователя
                     if (
                         currentRoom === BOT_ROOM &&
                         msg.sender !== BOT_NAME &&

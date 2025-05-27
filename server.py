@@ -5,8 +5,7 @@ import uuid
 import pymysql
 from datetime import datetime
 
-# Имя бота — должно совпадать с BOT_NAME из JS
-BOT_NAME = "Магический Бот"
+BOT_NAME = "Бот"
 
 # Подключение к БД
 def get_db():
@@ -99,7 +98,6 @@ async def handle_client(websocket, path):
                     target_room = data.get("room", room)
                     sender = data.get("sender", username)
 
-                    # ❌ Запрет на имя бота от клиента
                     if sender == BOT_NAME:
                         await safe_send(websocket, json.dumps({
                             "type": "error",
