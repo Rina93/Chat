@@ -102,7 +102,7 @@
     const contacts = document.querySelectorAll(".contact");
     const currentChatTitle = document.getElementById("current-chat");
 
-    // 💬 Запрашиваем имя пользователя при каждом заходе
+    // Запрашиваем имя пользователя при каждом заходе
     currentUsername = prompt("Введите ваше имя:") || "Гость";
 
     function connectToRoom(room) {
@@ -141,7 +141,6 @@
                 } else if (data.type === "new_message" && data.message.room === currentRoom) {
                     const msg = data.message;
 
-                    // Убедиться, что сообщение от бота всегда слева
                     const isSent = msg.sender === currentUsername && msg.sender !== BOT_NAME;
                     addMessage(msg, isSent);
 
@@ -198,7 +197,7 @@
         };
     }
 
-    // Приветственное сообщение бота (закрепленное)
+    // Приветственное сообщение бота
     function addPinnedBotGreeting() {
         const greetingMessage = {
             id: "bot_greeting",
@@ -282,7 +281,6 @@
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // Экранирование HTML
     function escapeHTML(str) {
         return str.replace(/[&<>"']/g, m => ({
             '&': '&amp;',
