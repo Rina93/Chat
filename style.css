@@ -392,7 +392,7 @@ body {
 }
 
 .messages::-webkit-scrollbar-thumb {
-    background-color: var(--accent-blue); /* Цвет самой "ручки" скролла */
+    background-color: var(--accent-blue);
     border-radius: 10px; /* Закругление краёв */
     border: 2px solid transparent;
     background-clip: content-box;
@@ -421,7 +421,7 @@ body {
 }
 
 .message.received.bot {
-    align-self: flex-start; /* Всегда слева */
+    align-self: flex-start;
 }
 
 .message[data-message-id="bot_greeting"] .message-content {
